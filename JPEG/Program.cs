@@ -12,21 +12,24 @@ namespace JPEG
 	class Program
 	{
 		const int CompressionQuality = 70;
+		
 
 		static void Main(string[] args)
 		{
-			try
-			{
+			//try
+			//{
 				Console.WriteLine(IntPtr.Size == 8 ? "64-bit version" : "32-bit version");
 				var sw = Stopwatch.StartNew();
 				var fileName = @"sample.bmp";
 //				var fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;
 				var uncompressedFileName = fileName + ".uncompressed." + CompressionQuality + ".bmp";
-				
+				DCT.BuildCache(DCTSize);
+
 				using (var fileStream = File.OpenRead(fileName))
 				using (var bmp = (Bitmap) Image.FromStream(fileStream, false, false))
 				{
+					
 					var imageMatrix = (Matrix) bmp;
 
 					sw.Stop();
@@ -47,17 +50,16 @@ namespace JPEG
 				Console.WriteLine("Decompression: " + sw.Elapsed);
 				Console.WriteLine($"Peak commit size: {MemoryMeter.PeakPrivateBytes() / (1024.0*1024):F2} MB");
 				Console.WriteLine($"Peak working set: {MemoryMeter.PeakWorkingSet() / (1024.0*1024):F2} MB");
-			}
-			catch(Exception e)
-			{
-				Console.WriteLine(e);
-			}
+			//}
+			//catch(Exception e)
+			//{
+			//	Console.WriteLine(e);
+			//}
 		}
 
 		private static CompressedImage Compress(Matrix matrix, int quality = 50)
 		{
 			var allQuantizedBytes = new List<byte>();
-
 			for(var y = 0; y < matrix.Height; y += DCTSize)
 			{
 				for(var x = 0; x < matrix.Width; x += DCTSize)
@@ -128,7 +130,7 @@ namespace JPEG
 
 			for(var y = 0; y < height; y++)
 				for(var x = 0; x < width; x++)
-					matrix.Pixels[yOffset + y, xOffset + x] = new Pixel(a[y, x], b[y, x], c[y, x], format);
+					matrix.Pixels[yOffset + y, xOffset + x].SetComponents(a[y, x], b[y, x], c[y, x], format);
 		}
 
 		private static double[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<Pixel, double> componentSelector)
